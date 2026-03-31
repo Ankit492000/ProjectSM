@@ -1,27 +1,35 @@
+cd ProjectSM
+pip install -r requirements.txt
+cp .env.example .env       # fill in your Upstox + Telegram credentials
+python3 -m src.main auth    # one-time login
+python3 -m src.main fetch RELIANCE --from-date 2025-04-01
+python3 -m src.main analyze RELIANCE
+python3 -m src.main live "NSE_EQ|INE002A01018" --mode ltpc
+
 # Basic backtest with ₹5L capital
-python -m src.main backtest RELIANCE -c 500000
+python3 -m src.main backtest RELIANCE -c 500000
 
 # With risk management + show trades
-python -m src.main backtest RELIANCE -c 500000 --stop-loss 3 --trailing-stop 5 --take-profit 8 --show-trades
+python3 -m src.main backtest RELIANCE -c 500000 --stop-loss 3 --trailing-stop 5 --take-profit 8 --show-trades
 
 # Multi-symbol with custom strategy params
-python -m src.main backtest RELIANCE,TCS,INFY -c 1000000 --params fast_period=5,slow_period=13
+python3 -m src.main backtest RELIANCE,TCS,INFY -c 1000000 --params fast_period=5,slow_period=13
 
 # Intraday cost model + date range
-python -m src.main backtest RELIANCE --intraday --from-date 2025-01-01 --to-date 2025-12-31
+python3 -m src.main backtest RELIANCE --intraday --from-date 2025-01-01 --to-date 2025-12-31
 
 
 
 # Fundamental analysis report
-python -m src.main fundamentals RELIANCE,TCS,INFY
+python3 -m src.main fundamentals RELIANCE,TCS,INFY
 
 # Backtest any strategy by name
-python -m src.main backtest RELIANCE -s rsi_vwap_reversion -c 500000 --show-trades
-python -m src.main backtest RELIANCE -s supertrend_momentum -c 500000 --stop-loss 3
-python -m src.main backtest RELIANCE -s bollinger_squeeze -c 200000
-python -m src.main backtest RELIANCE -s macd_rsi_divergence -c 500000
-python -m src.main backtest RELIANCE -s orb -c 100000 --intraday
-python -m src.main backtest RELIANCE -s funda_tech_combo -c 500000
+python3 -m src.main backtest RELIANCE -s rsi_vwap_reversion -c 500000 --show-trades  --interval minutes
+python3 -m src.main backtest RELIANCE -s supertrend_momentum -c 500000 --stop-loss 3 --interval minutes
+python3 -m src.main backtest RELIANCE -s bollinger_squeeze -c 200000 --interval minutes
+python3 -m src.main backtest RELIANCE -s macd_rsi_divergence -c 500000 --interval minutes
+python3 -m src.main backtest RELIANCE -s orb -c 100000 --intraday --interval minutes
+python3 -m src.main backtest RELIANCE -s funda_tech_combo -c 500000 --interval minutes
 
 # Multi-symbol comparison
-python -m src.main backtest RELIANCE,TCS,INFY,HDFCBANK -s supertrend_momentum -c 1000000
+python3 -m src.main backtest RELIANCE,TCS,INFY,HDFCBANK -s supertrend_momentum -c 1000000

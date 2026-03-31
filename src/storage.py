@@ -1,5 +1,6 @@
 """Parquet-based file storage for historical candles, live ticks, and instrument data."""
 
+from os import path
 from pathlib import Path
 from datetime import date
 
@@ -28,7 +29,7 @@ def save_candles(symbol: str, exchange: str, interval: str, df: pd.DataFrame) ->
     """
     path = HISTORICAL_DIR / exchange / symbol / f"{interval}.parquet"
     path.parent.mkdir(parents=True, exist_ok=True)
-
+    print(f"Saving candles to {path}...")
     # If file exists, merge and deduplicate by timestamp
     if path.exists():
         existing = pd.read_parquet(path)
@@ -47,8 +48,12 @@ def load_candles(
 ) -> pd.DataFrame:
     """Read candle data from Parquet with optional date range filter."""
     path = HISTORICAL_DIR / exchange / symbol / f"{interval}.parquet"
+    print(f"Saving candles to {path}...")
+
     if not path.exists():
+        print(f"No historical data found for {symbol} on {exchange} at interval {interval}.")
         return pd.DataFrame()
+    print(f"Loading candles from {path}...")
 
     df = pd.read_parquet(path)
     if "timestamp" in df.columns:

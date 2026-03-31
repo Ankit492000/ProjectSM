@@ -18,7 +18,7 @@ For true intraday ORB, use 5min/15min candle data.
 from typing import Any
 
 import pandas as pd
-import pandas_ta as ta
+import src.indicators as ta
 
 from src.strategy import Strategy, Signal
 

@@ -1,9 +1,7 @@
-"""Upstox OAuth2 authentication flow — token acquisition and caching."""
+"""Upstox OAuth2 authentication — simple token acquisition and caching."""
 
 import json
 import time
-import webbrowser
-from http.server import HTTPServer, BaseHTTPRequestHandler
 from pathlib import Path
 from urllib.parse import urlparse, parse_qs
 
@@ -63,8 +61,6 @@ def _load_cached_token() -> dict | None:
     except (json.JSONDecodeError, OSError):
         return None
 
-    # Upstox tokens expire at 3:30 AM IST next day.
-    # Simple heuristic: if cached more than 20 hours ago, consider expired.
     cached_at = data.get("_cached_at", 0)
     if time.time() - cached_at > 20 * 3600:
         return None
@@ -72,58 +68,81 @@ def _load_cached_token() -> dict | None:
 
 
 def get_access_token() -> str:
-    """Get a valid access token — from cache or by running the auth flow."""
+    """Get a valid access token -- from cache, .env, or interactive prompt."""
+    # 1. Check cache file
     cached = _load_cached_token()
     if cached and cached.get("access_token"):
         return cached["access_token"]
+
+    # 2. Check .env for a directly pasted token
+    env_token = os.getenv("UPSTOX_ACCESS_TOKEN", "").strip()
+    if env_token:
+        _save_token({"access_token": env_token})
+        return env_token
+
+    # 3. Interactive prompt
     return run_auth_flow()
 
 
 def run_auth_flow() -> str:
-    """Run the full OAuth2 flow: open browser, capture callback, exchange code."""
-    auth_code_holder = {}
-
-    parsed = urlparse(UPSTOX_REDIRECT_URI)
-    port = parsed.port or 5000
-    callback_path = parsed.path or "/callback"
-
-    class CallbackHandler(BaseHTTPRequestHandler):
-        def do_GET(self):
-            qs = parse_qs(urlparse(self.path).query)
-            code = qs.get("code", [None])[0]
-            if code and self.path.startswith(callback_path):
-                auth_code_holder["code"] = code
-                self.send_response(200)
-                self.end_headers()
-                self.wfile.write(b"Authorization successful! You can close this tab.")
-            else:
-                self.send_response(400)
-                self.end_headers()
-                self.wfile.write(b"Authorization failed.")
-
-        def log_message(self, format, *args):
-            pass  # suppress logs
-
+    """Simple 3-option auth flow. No local server, no blocking."""
     url = get_auth_url()
-    print(f"Opening browser for Upstox login...\n{url}")
-    webbrowser.open(url)
 
-    server = HTTPServer(("127.0.0.1", port), CallbackHandler)
-    print(f"Waiting for callback on port {port}...")
+    print(f"\n{'='*60}")
+    print("  UPSTOX LOGIN")
+    print(f"{'='*60}")
+    print()
+    print("  Choose one:")
+    print()
+    print("  [1] I have an access token (paste it directly)")
+    print("      Get it from: Upstox Developer Console > Your App")
+    print()
+    print("  [2] I have a auth code / redirect URL")
+    print(f"      Login URL: {url}")
+    print("      After login, Upstox redirects to a URL with ?code=XXXXX")
+    print("      Copy that code or the full URL and paste it here")
+    print()
+    print("  [3] Set token in .env and skip this")
+    print("      Add UPSTOX_ACCESS_TOKEN=your_token to .env file")
+    print()
+    print(f"{'='*60}")
 
-    while "code" not in auth_code_holder:
-        server.handle_request()
+    choice = input("\nChoose [1/2/3]: ").strip()
 
-    server.server_close()
-    code = auth_code_holder["code"]
-    print("Authorization code received. Exchanging for token...")
+    if choice == "1":
+        token = input("Paste access token: ").strip()
+        if not token:
+            raise ValueError("No token provided.")
+        _save_token({"access_token": token})
+        print(f"Token saved to {TOKEN_CACHE}")
+        return token
 
-    token_data = exchange_code_for_token(code)
-    _save_token(token_data)
-    print("Token cached successfully.")
-    return token_data["access_token"]
+    elif choice == "2":
+        user_input = input("Paste redirect URL or auth code: ").strip()
 
+        # Extract code from URL if needed
+        if "code=" in user_input:
+            qs = parse_qs(urlparse(user_input).query)
+            code = qs.get("code", [None])[0]
+            if not code:
+                raise ValueError("Could not extract 'code' from URL.")
+        else:
+            code = user_input
 
-if __name__ == "__main__":
-    token = run_auth_flow()
-    print(f"Access token: {token[:20]}...")
+        if not code:
+            raise ValueError("No auth code provided.")
+
+        print("Exchanging code for token...")
+        token_data = exchange_code_for_token(code)
+        _save_token(token_data)
+        print(f"Token saved to {TOKEN_CACHE}")
+        return token_data["access_token"]
+
+    elif choice == "3":
+        print(f"\nAdd this line to your .env file:")
+        print(f"  UPSTOX_ACCESS_TOKEN=<your_token_here>")
+        print(f"\nThen run the command again.")
+        raise SystemExit(0)
+
+    else:
+        raise ValueError(f"Invalid choice: {choice}")

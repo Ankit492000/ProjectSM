@@ -12,7 +12,7 @@ Indian market edge: Consolidation before result season → explosive move post e
 from typing import Any
 
 import pandas as pd
-import pandas_ta as ta
+import src.indicators as ta
 
 from src.strategy import Strategy, Signal
 

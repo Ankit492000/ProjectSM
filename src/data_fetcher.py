@@ -4,6 +4,7 @@ import gzip
 import json
 import time
 from datetime import datetime, timedelta
+from urllib.parse import quote
 
 import httpx
 import pandas as pd
@@ -29,6 +30,7 @@ def _rate_limit():
 
 
 def _headers() -> dict:
+    print("Using Upstox access token:", get_access_token())
     return {
         "Authorization": f"Bearer {get_access_token()}",
         "Accept": "application/json",
@@ -57,17 +59,19 @@ def fetch_instruments(exchange: str = "NSE") -> pd.DataFrame:
 
 def fetch_historical_candles(
     instrument_key: str,
-    interval: str = "day",
-    unit: str = "days",
+    interval: str = "1",
+    unit: str = "minutes",
     from_date: str | None = None,
     to_date: str | None = None,
 ) -> pd.DataFrame:
     """Fetch historical OHLCV candles from Upstox v3 API.
     
     instrument_key: e.g. "NSE_EQ|INE669E01016" (from instrument master)
-    interval: 1, 5, 15, 30 (for intraday) or day/week/month
-    unit: minutes, hours, days, weeks, months
+    interval: 1, 5, 15, 30 for intraday; 1 for day/week/month
+    unit: minute, 30minute, day, week, month
     from_date / to_date: YYYY-MM-DD strings
+    
+    Upstox v3 URL: /v3/historical-candle/{instrument_key}/{unit}/{interval}/{to}/{from}
     """
     _rate_limit()
 
@@ -76,16 +80,29 @@ def fetch_historical_candles(
     if from_date is None:
         from_date = (datetime.now() - timedelta(days=365)).strftime("%Y-%m-%d")
 
+    # URL-encode the instrument key (| -> %7C)
+    encoded_key = quote(instrument_key, safe="")
+
     url = (
         f"{UPSTOX_BASE}/v3/historical-candle"
-        f"/{instrument_key}/{unit}/{interval}/{to_date}/{from_date}"
+        f"/{encoded_key}/{unit}/{interval}/{to_date}/{from_date}"
     )
 
+    print(f"Fetching candles from Upstox: {url}")
+
     resp = httpx.get(url, headers=_headers(), timeout=30)
+    print(f"Resonse : {resp.status_code} for {instrument_key} ({interval} {unit})")
     resp.raise_for_status()
     body = resp.json()
+    # print(f"Response body: {body}")
+    # exit(0)
 
     candles = body.get("data", {}).get("candles", [])
+    # print(f"Received {len(candles)} candles for {instrument_key} ({interval} {unit})")
+    candles = list(reversed(candles))  # API returns newest first; we want oldest first
+    # print(f"Received {len(candles)} candles for {instrument_key} ({interval} {unit})")
+    # exit(0)
+    # candles = candles.reverse()  # API returns newest first; we want oldest first
     if not candles:
         print(f"No candle data returned for {instrument_key}")
         return pd.DataFrame()
@@ -100,12 +117,21 @@ def fetch_historical_candles(
 def fetch_and_store(
     symbol: str,
     exchange: str = "NSE",
-    interval: str = "day",
-    unit: str = "days",
+    interval: str = "1",
+    unit: str = "minutes",
     from_date: str | None = None,
     to_date: str | None = None,
 ) -> pd.DataFrame:
-    """Fetch candles and persist to Parquet. Resolves symbol to instrument_key automatically."""
+    """Fetch candles and persist to Parquet. Resolves symbol to instrument_key automatically.
+    
+    Common combos:
+      Daily:   unit="day",      interval="1"
+      Weekly:  unit="week",     interval="1"
+      Monthly: unit="month",    interval="1"
+      5min:    unit="minutes",   interval="5"
+      15min:   unit="minutes",   interval="15"
+      30min:   unit="30minute", interval="1"
+    """
     # Ensure instruments are cached
     instruments = storage.load_instruments(exchange)
     if instruments.empty:
@@ -116,12 +142,14 @@ def fetch_and_store(
         raise ValueError(f"Could not resolve instrument_key for {symbol} on {exchange}. "
                          "Check symbol name or refresh instruments.")
 
-    print(f"Fetching {interval} candles for {symbol} ({instrument_key})...")
+    print(f"Fetching {unit} candles for {symbol} ({instrument_key})...")
     df = fetch_historical_candles(instrument_key, interval, unit, from_date, to_date)
 
     if not df.empty:
-        path = storage.save_candles(symbol, exchange, interval, df)
-        print(f"Saved {len(df)} candles → {path}")
+        # Use unit as the storage label (day, week, month, minute, 30minute)
+        storage_label = unit if interval == "1" else f"{interval}{unit}"
+        path = storage.save_candles(symbol, exchange, storage_label, df)
+        print(f"Saved {len(df)} candles -> {path}")
 
     return df
 

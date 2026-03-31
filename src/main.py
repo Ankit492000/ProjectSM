@@ -49,7 +49,7 @@ def cmd_analyze(args):
     print(f"Loaded {len(df)} candles with indicators for {args.symbol}")
 
     # Run default EMA crossover backtest as demo
-    import pandas_ta as ta
+    import src.indicators as ta
     df["ema_9"] = ta.ema(df["close"], length=9)
     df["ema_21"] = ta.ema(df["close"], length=21)
 
@@ -256,8 +256,8 @@ def main():
     p_fetch = sub.add_parser("fetch", help="Fetch historical candle data")
     p_fetch.add_argument("symbol", help="Trading symbol (e.g. RELIANCE, NIFTY 50)")
     p_fetch.add_argument("-e", "--exchange", default="NSE", help="Exchange: NSE, BSE (default: NSE)")
-    p_fetch.add_argument("-i", "--interval", default="day", help="Interval: 1,5,15,30,day,week,month")
-    p_fetch.add_argument("-u", "--unit", default="days", help="Unit: minutes,hours,days,weeks,months")
+    p_fetch.add_argument("-i", "--interval", default="1", help="Interval: 1,5,15,30 (default: 1)")
+    p_fetch.add_argument("-u", "--unit", default="day", help="Unit: minute,30minute,day,week,month (default: day)")
     p_fetch.add_argument("--from-date", help="Start date (YYYY-MM-DD)")
     p_fetch.add_argument("--to-date", help="End date (YYYY-MM-DD)")
     p_fetch.add_argument("--refresh-instruments", action="store_true",

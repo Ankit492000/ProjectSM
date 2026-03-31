@@ -13,7 +13,7 @@ historically strong reversal signals with high win rates.
 from typing import Any
 
 import pandas as pd
-import pandas_ta as ta
+import src.indicators as ta
 import numpy as np
 
 from src.strategy import Strategy, Signal

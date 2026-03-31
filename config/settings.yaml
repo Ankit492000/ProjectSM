@@ -13,10 +13,10 @@ upstox:
     max_reconnect_attempts: 10
 
 storage:
-  base_dir: data
-  historical_dir: data/historical
-  ticks_dir: data/ticks
-  instruments_dir: data/instruments
+  base_dir: /home/ankit/Documents/ankit/Python/ProjectSM/data
+  historical_dir: /home/ankit/Documents/ankit/Python/ProjectSM/data/historical
+  ticks_dir: /home/ankit/Documents/ankit/Python/ProjectSM/data/ticks
+  instruments_dir: /home/ankit/Documents/ankit/Python/ProjectSM/data/instruments
   tick_flush_interval: 5  # seconds between batch writes
 
 telegram:
