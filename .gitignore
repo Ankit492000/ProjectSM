@@ -1,0 +1,26 @@
+# Data
+data/
+
+# Secrets
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# Proto compiled
+proto/*_pb2.py
+proto/*_pb2.pyi
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

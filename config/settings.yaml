@@ -1,0 +1,38 @@
+# ProjectSM Configuration
+# Secrets loaded from .env — this file has non-secret settings only.
+
+upstox:
+  base_url: https://api.upstox.com
+  feed_authorize_url: https://api.upstox.com/v3/feed/market-data-feed/authorize
+  historical_base: https://api.upstox.com/v3/historical-candle
+  token_cache_file: .upstox_token.json
+  instruments_url: https://assets.upstox.com/market-quote/instruments/exchange
+  websocket:
+    mode: ltpc  # ltpc | full | option_greeks
+    reconnect_delay: 5
+    max_reconnect_attempts: 10
+
+storage:
+  base_dir: data
+  historical_dir: data/historical
+  ticks_dir: data/ticks
+  instruments_dir: data/instruments
+  tick_flush_interval: 5  # seconds between batch writes
+
+telegram:
+  enabled: true
+  alert_format: |
+    {action} Signal — {symbol}
+    Strategy: {strategy}
+    Confidence: {confidence:.0%}
+    Price: ₹{price}
+    Reason: {reason}
+    Time: {timestamp}
+
+ai:
+  default_provider: ollama  # ollama | openai | anthropic
+  run_on: candle_close  # candle_close | tick (not recommended)
+  confidence_threshold: 0.6
+
+strategy:
+  signal_confidence_threshold: 0.5  # minimum confidence to send alert

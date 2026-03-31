@@ -1,0 +1,11 @@
+# Basic backtest with ₹5L capital
+python -m src.main backtest RELIANCE -c 500000
+
+# With risk management + show trades
+python -m src.main backtest RELIANCE -c 500000 --stop-loss 3 --trailing-stop 5 --take-profit 8 --show-trades
+
+# Multi-symbol with custom strategy params
+python -m src.main backtest RELIANCE,TCS,INFY -c 1000000 --params fast_period=5,slow_period=13
+
+# Intraday cost model + date range
+python -m src.main backtest RELIANCE --intraday --from-date 2025-01-01 --to-date 2025-12-31

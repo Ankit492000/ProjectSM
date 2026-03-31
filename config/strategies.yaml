@@ -1,0 +1,24 @@
+# Strategy Registry
+# Each strategy maps to a Python class and its parameters.
+
+strategies:
+  - name: ema_crossover
+    type: rule
+    module: strategies.rules.moving_avg_crossover
+    class: EMACrossover
+    enabled: true
+    params:
+      fast_period: 9
+      slow_period: 21
+      volume_confirm: true
+      volume_ma_period: 20
+
+  - name: llm_signal
+    type: ai
+    module: strategies.ai.llm_strategy
+    class: LLMStrategy
+    enabled: true
+    params:
+      lookback_candles: 50
+      indicators: [rsi, macd, bbands, ema_9, ema_21]
+      provider: ollama  # override per-strategy; defaults to ai.default_provider
