@@ -1,7 +1,9 @@
 # Strategy Registry
 # Each strategy maps to a Python class and its parameters.
+# Use: python -m src.main backtest RELIANCE -s <name> --show-trades
 
 strategies:
+  # ── 1. EMA Crossover (Trend Following — original) ──
   - name: ema_crossover
     type: rule
     module: strategies.rules.moving_avg_crossover
@@ -13,6 +15,101 @@ strategies:
       volume_confirm: true
       volume_ma_period: 20
 
+  # ── 2. RSI + VWAP Mean Reversion (Range-Bound Markets) ──
+  - name: rsi_vwap_reversion
+    type: rule
+    module: strategies.rules.rsi_vwap_reversion
+    class: RSIVWAPMeanReversion
+    enabled: true
+    params:
+      rsi_period: 14
+      oversold: 30
+      overbought: 70
+      rsi_exit_mid: 50
+      volume_spike_factor: 1.5
+      atr_period: 14
+      min_atr_pct: 0.5
+
+  # ── 3. Supertrend Momentum (Trending Markets) ──
+  - name: supertrend_momentum
+    type: rule
+    module: strategies.rules.supertrend_momentum
+    class: SupertrendMomentum
+    enabled: true
+    params:
+      atr_period: 10
+      multiplier: 3.0
+      adx_period: 14
+      adx_threshold: 20
+      use_sma_filter: true
+      sma_period: 200
+
+  # ── 4. Bollinger Squeeze Breakout (Low-Vol → Breakout) ──
+  - name: bollinger_squeeze
+    type: rule
+    module: strategies.rules.bollinger_squeeze
+    class: BollingerSqueezeBreakout
+    enabled: true
+    params:
+      bb_period: 20
+      bb_std: 2.0
+      squeeze_lookback: 120
+      squeeze_percentile: 20
+      keltner_filter: true
+      kc_period: 20
+      kc_multiplier: 1.5
+      volume_surge_factor: 1.3
+      min_squeeze_bars: 3
+
+  # ── 5. MACD + RSI Divergence (Reversal Detection) ──
+  - name: macd_rsi_divergence
+    type: rule
+    module: strategies.rules.macd_rsi_divergence
+    class: MACDRSIDivergence
+    enabled: true
+    params:
+      rsi_period: 14
+      macd_fast: 12
+      macd_slow: 26
+      macd_signal: 9
+      divergence_lookback: 20
+      require_both: false
+      min_swing_pct: 1.0
+
+  # ── 6. Opening Range Breakout (Intraday / Swing) ──
+  - name: orb
+    type: rule
+    module: strategies.rules.opening_range_breakout
+    class: OpeningRangeBreakout
+    enabled: true
+    params:
+      range_bars: 1
+      breakout_confirm_bars: 1
+      volume_factor: 1.2
+      atr_period: 14
+      use_atr_filter: true
+      min_range_atr_ratio: 0.5
+      max_range_atr_ratio: 2.0
+
+  # ── 7. Fundamental + Technical Combo (Quality + Timing) ──
+  - name: funda_tech_combo
+    type: rule
+    module: strategies.rules.funda_tech_combo
+    class: FundaTechCombo
+    enabled: true
+    params:
+      min_fundamental_score: 0.5
+      sector_median_pe: 25.0
+      ticker_suffix: ".NS"
+      sma_long: 200
+      ema_mid: 21
+      ema_slow: 50
+      rsi_period: 14
+      rsi_buy_low: 40
+      rsi_buy_high: 65
+      rsi_sell_threshold: 75
+
+  # ── 8. LLM AI Signal (AI-based) ──
   - name: llm_signal
     type: ai
     module: strategies.ai.llm_strategy
@@ -21,4 +118,4 @@ strategies:
     params:
       lookback_candles: 50
       indicators: [rsi, macd, bbands, ema_9, ema_21]
-      provider: ollama  # override per-strategy; defaults to ai.default_provider
+      provider: ollama

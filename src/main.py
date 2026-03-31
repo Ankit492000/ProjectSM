@@ -60,6 +60,20 @@ def cmd_analyze(args):
     print_backtest_report(result, f"EMA 9/21 Crossover — {args.symbol}")
 
 
+def cmd_fundamentals(args):
+    """Fetch and display fundamental analysis for a stock."""
+    from src.fundamentals import get_fundamentals, FundamentalScore, print_fundamental_report
+
+    tickers = [t.strip() for t in args.tickers.split(",")]
+    for ticker in tickers:
+        # Ensure .NS / .BO suffix
+        if "." not in ticker:
+            ticker = ticker + (".NS" if args.exchange == "NSE" else ".BO")
+        data = get_fundamentals(ticker, refresh=args.refresh)
+        score = FundamentalScore.compute(data, sector_median_pe=args.sector_pe)
+        print_fundamental_report(ticker, data, score)
+
+
 def cmd_backtest(args):
     """Run full backtest: load strategy, simulate on historical data with costs + risk management."""
     import importlib
@@ -255,6 +269,13 @@ def main():
     p_analyze.add_argument("-e", "--exchange", default="NSE")
     p_analyze.add_argument("-i", "--interval", default="day")
 
+    # fundamentals
+    p_fund = sub.add_parser("fundamentals", help="Fundamental analysis for Indian stocks")
+    p_fund.add_argument("tickers", help="Ticker(s) comma-separated (e.g. RELIANCE,TCS,INFY)")
+    p_fund.add_argument("-e", "--exchange", default="NSE", help="NSE or BSE (auto-appends .NS/.BO)")
+    p_fund.add_argument("--sector-pe", type=float, default=25.0, help="Sector median P/E for relative valuation")
+    p_fund.add_argument("--refresh", action="store_true", help="Force re-fetch (ignore cache)")
+
     # backtest
     p_bt = sub.add_parser("backtest", help="Full backtest with costs, risk management, and detailed metrics")
     p_bt.add_argument("symbols", help="Symbol(s) — comma-separated for multi-symbol (e.g. RELIANCE,TCS,INFY)")
@@ -301,6 +322,8 @@ def main():
         cmd_fetch(args)
     elif args.command == "analyze":
         cmd_analyze(args)
+    elif args.command == "fundamentals":
+        cmd_fundamentals(args)
     elif args.command == "backtest":
         cmd_backtest(args)
     elif args.command == "live":

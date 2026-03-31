@@ -9,3 +9,19 @@ python -m src.main backtest RELIANCE,TCS,INFY -c 1000000 --params fast_period=5,
 
 # Intraday cost model + date range
 python -m src.main backtest RELIANCE --intraday --from-date 2025-01-01 --to-date 2025-12-31
+
+
+
+# Fundamental analysis report
+python -m src.main fundamentals RELIANCE,TCS,INFY
+
+# Backtest any strategy by name
+python -m src.main backtest RELIANCE -s rsi_vwap_reversion -c 500000 --show-trades
+python -m src.main backtest RELIANCE -s supertrend_momentum -c 500000 --stop-loss 3
+python -m src.main backtest RELIANCE -s bollinger_squeeze -c 200000
+python -m src.main backtest RELIANCE -s macd_rsi_divergence -c 500000
+python -m src.main backtest RELIANCE -s orb -c 100000 --intraday
+python -m src.main backtest RELIANCE -s funda_tech_combo -c 500000
+
+# Multi-symbol comparison
+python -m src.main backtest RELIANCE,TCS,INFY,HDFCBANK -s supertrend_momentum -c 1000000
